@@ -104,3 +104,27 @@ class MathsQuiz:
         self.feedback_label.pack(pady=12)
 
         tk.Button(frame, text="Submit", width=12, font=("Times New Roman", 12), command=self.handle_submit).pack()
+
+    # This check and verifies the input of the user wether it is right or wrong
+    def isCorrect(self, user_answer, correct_answer):
+        if user_answer == correct_answer:
+            self._set_feedback("Correct! :>", "green")
+            return True
+        if self.attempt == 1:
+            self._set_feedback("Wrong. You have one more try. :|", "red")
+        else:
+            self._set_feedback(f"Wrong. The answer was {correct_answer}. :<", "red")
+        return False
+
+    # This display the result of user and asks if user wants to play again
+    def displayResults(self):
+        frame = self._new_frame()
+        tk.Label(frame, text="Quiz Complete! <3", font=("Times New Roman", 20, "bold")).pack(pady=20)
+        tk.Label(frame, text=f"Score: {self.score} / {Max_Score}", font=("Times New Roman", 16)).pack()
+        tk.Label(frame, text=f"Rank: {self.grade_for(self.score)}", font=("Times New Roman", 16)).pack(pady=8)
+
+        self.root.update_idletasks()  # Before the dialog box opens it write down the results
+        if messagebox.askyesno("Play again?", "Would you like to play again?"):
+            self.displayMenu()
+        else:
+            self.root.destroy()
