@@ -52,3 +52,22 @@ class MathsQuiz:
         self.frame = tk.Frame(self.root)
         self.frame.pack(expand=True, fill="both")
         return self.frame
+
+        # Requires Function
+    # This show difficulty buttons (Easy / Moderate / Advanced)
+    def displayMenu(self):
+        frame = self._new_frame()
+        tk.Label(frame, text="DIFFICULTY LEVEL", font=("Times New Roman", 18, "bold")).pack(pady=20)
+        for number, name in enumerate(Difficulties, start=1):
+            tk.Button(frame, text=f"{number}. {name}", width=20, font=("Times New Roman", 12), command=lambda level=name: self._start_game(level),).pack(pady=6)
+            
+    # Returns a single random integer whose digit count fits to the difficulty
+    @staticmethod # Marks a method that doesn't use. It needs only the output
+    def randomInt(difficulty):
+        low, high = Difficulties[difficulty]
+        return random.randint(low, high)
+        
+    # Randomly returns either a Additon or Subtracion 
+    @staticmethod
+    def decideOperation():
+        return random.choice(["+", "-"])
