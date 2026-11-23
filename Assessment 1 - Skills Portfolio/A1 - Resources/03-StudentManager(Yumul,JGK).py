@@ -295,3 +295,105 @@ class StudentManager:
         chosen = extreme_students(self.students, highest) # This is for one student or several if tied will be shown
         word = "Highest" if highest else "Lowest"
         self._show(chosen, f"{word} total score: {chosen[0].total()} / {Max_Total} ({len(chosen)} student(s)).")
+
+    # Item 5: This is for when user wants to sort the student by a choosen a field then has button to know if its ascending or descending
+    def show_sort(self):
+        self._clear_controls()
+        tk.Label(self.controls, text="Sort by:").pack(side="left")
+        field = ttk.Combobox(self.controls, values=list(Sort_Keys), state="readonly", width=16)  # drop-down
+        field.current(0) # This is for the preselect the first option but user can edit it 
+        field.pack(side="left", padx=6)
+        order = tk.StringVar(value="asc") # This holds which radio button is chosen
+        tk.Radiobutton(self.controls, text="Ascending", variable=order, value="asc").pack(side="left")
+        tk.Radiobutton(self.controls, text="Descending", variable=order, value="desc").pack(side="left")
+
+        def apply_sort(): # This runs whenuser clikecd Sort button
+            ordered = sort_students(self.students, field.get(), order.get() == "desc")
+            self._show(ordered, self._class_summary(ordered))
+
+        tk.Button(self.controls, text="Sort", command=apply_sort).pack(side="left", padx=6)
+        apply_sort() # This show a sorted table straight away
+
+    # Item 6: This is for when user create a new student by the user
+    def show_add(self):
+        self._clear_controls()
+        entries = {} # The field name are also its entry widget
+        for row, field in enumerate(Fields): # This is the labelled box per field
+            tk.Label(self.controls, text=f"{field}:").grid(row=row, column=0, sticky="e", padx=4, pady=2)
+            entries[field] = tk.Entry(self.controls, width=24)
+            entries[field].grid(row=row, column=1, pady=2)
+
+        def add(): # This runs when "Add student" button is clicked
+            try:
+                values = {f: validate_field(f, entries[f].get(), self.students) for f in Fields}  # check every box
+            except ValueError as error: # This will show when the first invalid box stops the add
+                messagebox.showerror("Invalid input", str(error))
+                return
+            student = Student(values["Student number"], values["Name"], [values[f"Coursework {n}"] for n in range(1, Coursework_Count + 1)], values["Exam mark"])
+            self.students.append(student)  # This add in memory of the newly added student
+            if not self._save():  # If file couldn't be updated it undo the change
+                self.students.remove(student)
+                return
+            for entry in entries.values():  # This clear the form for the next new student to be added
+                entry.delete(0, tk.END)
+            self._show([student], f"Added {student.name} ({student.code}). Students in class: {len(self.students)}.")
+
+        tk.Button(self.controls, text="Add student", command=add).grid(row=len(Fields), column=1, sticky="w", pady=6)
+
+    # Item 7: This is for when user deletes a student info after confirmation
+    def show_delete(self):
+        self._clear_controls()
+        tk.Label(self.controls, text="Student name or number to delete:").pack(side="left")
+        entry = tk.Entry(self.controls, width=24)
+        entry.pack(side="left", padx=6)
+
+        def delete(event=None): # This runs on the button or the enter key
+            student = self._select_one(entry.get())  # This shows exactly one match or none
+            if student is None:
+                return
+            if not messagebox.askyesno("Confirm delete", f"Delete {student.name} ({student.code})?"):
+                return  # If user changed their mind mid way
+            index = self.students.index(student)  # This remember the position in case we must undo
+            del self.students[index] # This removes in memory
+            if not self._save(): # This file couldn't be updated the student will be put back
+                self.students.insert(index, student)
+                return
+            entry.delete(0, tk.END) # This clear the box
+            self._show([], f"Deleted {student.name} ({student.code}). Students in class: {len(self.students)}.")
+
+        entry.bind("<Return>", delete)
+        tk.Button(self.controls, text="Delete", command=delete).pack(side="left")
+
+    # Item 8: This is for when user updates a field of one student
+    def show_update(self):
+        self._clear_controls()
+        tk.Label(self.controls, text="Student name or number:").grid(row=0, column=0, sticky="e", padx=4, pady=2)
+        who = tk.Entry(self.controls, width=24) # This is to identify which student user want to update
+        who.grid(row=0, column=1, pady=2)
+        tk.Label(self.controls, text="Field to update:").grid(row=1, column=0, sticky="e", padx=4, pady=2)
+        which = ttk.Combobox(self.controls, values=Fields, state="readonly", width=21) # This is the the sub-menu
+        which.current(0)
+        which.grid(row=1, column=1, pady=2)
+        tk.Label(self.controls, text="New value:").grid(row=2, column=0, sticky="e", padx=4, pady=2)
+        new = tk.Entry(self.controls, width=24) # This is the the replacement value
+        new.grid(row=2, column=1, pady=2)
+
+        def update(): # This runs when "Update" button is clicked
+            student = self._select_one(who.get()) # This shows exactly one match or none
+            if student is None:
+                return
+            field = which.get() # This is where which field will change
+            try:
+                value = validate_field(field, new.get(), self.students, current=student)
+            except ValueError as error:
+                messagebox.showerror("Invalid input", str(error))
+                return
+            backup = (student.code, student.name, list(student.coursework), student.exam)
+            apply_field(student, field, value)  # This changes the memory
+            if not self._save(): # If file couldn't be updated it will undo the changes
+                student.code, student.name, student.coursework, student.exam = backup
+                return
+            new.delete(0, tk.END) # This clear the value box for the next student that the user wants to update
+            self._show([student], f"Updated {field} for {student.name}. File saved.")
+
+        tk.Button(self.controls, text="Update", command=update).grid(row=3, column=1, sticky="w", pady=6)
