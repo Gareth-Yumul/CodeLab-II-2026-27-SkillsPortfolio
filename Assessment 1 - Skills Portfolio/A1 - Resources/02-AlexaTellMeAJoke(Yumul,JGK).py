@@ -74,3 +74,36 @@ class JokeApp:
                 self.order[0], self.order[1] = self.order[1], self.order[0]
             self.position = 0
 
+    # It dispalys the current joke's setup and hides any old punchline
+    def _show_joke(self):
+        setup, _ = self.jokes[self.order[self.position]]
+        self.setup_label.config(text=setup)
+        self.punchline_label.config(text="")
+        self.punchline_button.config(state="normal")
+
+    # This handles the "Alexa tell me a joke" button, it shows first the firts joke then it disables the button handing it over to the "Next Joke" button for the following jokes
+    def tell_joke(self):
+        self._advance()
+        self._show_joke()
+        self.tell_button.config(state="disabled")
+        self.next_button.config(state="normal")
+
+    # This handles the "Show Punchline" button, it reveals the current joke's punchline when joke is displayed
+    def show_punchline(self):
+        if self.position < 0:
+            return
+        _, punchline = self.jokes[self.order[self.position]]
+        self.punchline_label.config(text=punchline)
+        self.punchline_button.config(state="disabled")
+
+    # This handles the "Next Joke" button, it allows to move to the next joke in the shuffled round
+    def next_joke(self):
+        self._advance()
+        self._show_joke()
+        
+# Creates the window, loads the txt file, and starts the app (or shows an error if no jokes found)
+def main():
+    root = tk.Tk()
+    root.title("Alexa tell me a Joke")
+    root.geometry("520x320")
+    root.resizable(False, False)
