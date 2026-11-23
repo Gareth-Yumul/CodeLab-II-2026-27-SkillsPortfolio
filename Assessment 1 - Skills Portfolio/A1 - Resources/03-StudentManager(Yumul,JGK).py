@@ -419,7 +419,6 @@ def main():
         messagebox.showwarning("Some records were skipped", shown + "\n\nSkipped lines are NOT kept if you later add, delete or update a record.")
     root.mainloop() # It wait for user to click
 
-
 # This runs only when this file is executed directly not when imported
 if __name__ == "__main__":
     main()
