@@ -173,3 +173,53 @@ def apply_field(student, field, value):
         student.exam = value
     else: # This is an else statement because courswrok 1,2,3 are left which are all storers in a same way
         student.coursework[int(field[-1]) - 1] = value
+        
+# The GUI part
+
+# This hold all the student list and menu that builds the whole window
+class StudentManager:
+    # This builds the menu, input area, result tables and the summary line
+    def __init__(self, root, students, path):
+        self.root = root # This is the main window
+        self.students = students # This is the list of student object and the working copy that can either add, delete or edit
+        self.path = path # This is to show where the user inputs changes are saved
+
+        menu = tk.Frame(root) # This is the left column where it holds all the menu buttons
+        menu.pack(side="left", fill="y", padx=10, pady=10)
+        tk.Label(menu, text="MENU", font=("Times New Roman", 16, "bold")).pack(pady=(0, 8))
+        options = [  # Button text and the function to run
+            ("1. View all student records", self.show_all),
+            ("2. View individual student record", self.show_find),
+            ("3. Show student with highest total score", lambda: self.show_extreme(True)),
+            ("4. Show student with lowest total score", lambda: self.show_extreme(False)),
+            ("5. Sort student records", self.show_sort),
+            ("6. Add a student record", self.show_add),
+            ("7. Delete a student record", self.show_delete),
+            ("8. Update a student's record", self.show_update),
+        ]
+        for text, command in options:  # This is a one button per action
+            tk.Button(menu, text=text, width=34, anchor="w", command=command).pack(pady=3)
+        tk.Button(menu, text="Quit", width=34, command=root.destroy).pack(pady=(15, 0))
+
+        main = tk.Frame(root) # The right side shows the input, table and summary
+        main.pack(side="left", fill="both", expand=True, padx=(0, 10), pady=10)
+
+        self.controls = tk.Frame(main) # This is the input area where contents change per menu items
+        self.controls.pack(fill="x", pady=(0, 8))
+
+        table_frame = tk.Frame(main) # This hold the table and its scrollbar
+        table_frame.pack(fill="both", expand=True)
+        self.table = ttk.Treeview(table_frame, columns=Column_Names, show="headings", height=16)
+        widths = (180, 110, 120, 90, 90, 60) # The pixels width of each column
+        for name, width in zip(Column_Names, widths): # pair each heading with its width
+            self.table.heading(name, text=name) # The column heading text
+            self.table.column(name, width=width, anchor="w" if name == "Name" else "center")
+        scrollbar = ttk.Scrollbar(table_frame, orient="vertical", command=self.table.yview)
+        self.table.configure(yscrollcommand=scrollbar.set) # The link table and scrollbar
+        self.table.pack(side="left", fill="both", expand=True)
+        scrollbar.pack(side="right", fill="y")
+
+        self.summary = tk.Label(main, text="", anchor="w", justify="left", font=("Times New Roman", 12))
+        self.summary.pack(fill="x", pady=(8, 0)) # This is the summry or status line under the table 
+
+        self.show_all() # This start by showing every student on the list
