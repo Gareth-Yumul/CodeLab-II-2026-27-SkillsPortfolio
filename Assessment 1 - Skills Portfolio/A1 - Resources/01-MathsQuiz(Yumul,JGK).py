@@ -185,3 +185,16 @@ class MathsQuiz:
     @staticmethod
     def grade_for(score):
         return next(grade for cutoff, grade in Grade_Boundaries if score >= cutoff)
+
+# It creates the window and shows the difficulty menu which eventually starts the event loop
+def main():
+    root = tk.Tk()
+    root.title("Maths Quiz")
+    root.geometry("420x340")
+    root.resizable(False, False)
+    MathsQuiz(root).displayMenu()
+    root.mainloop()
+
+# This runs only when this file is executed directly not when imported
+if __name__ == "__main__":
+    main()
