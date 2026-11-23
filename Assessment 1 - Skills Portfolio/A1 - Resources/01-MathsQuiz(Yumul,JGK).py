@@ -28,3 +28,27 @@ Grade_Boundaries = [(90, "A+"), (80, "A"), (70, "B"), (60, "C"), (50, "D"), (0, 
 # This allows user input to be valis such as "1_000" or "-54" but inputs such as "abc" or "4x" invalid
 Integer_Pattern = re.compile(r"-?\d+")
 
+# This class define the blueprint that bundles data (score, question number) with the functions that use it
+class MathsQuiz:
+    
+    def __init__(self, root): #init runs automatically when i write MathsQuiz(root).self means "particular quiz object"
+        self.root = root # Stores the main window
+        self.frame = None # The current screen and it's empty until one is built
+        self.entry = None # This is the answer box and it only exist during a question
+        self.status_label = None # The "Question 3/10 Score: 20" line
+        self.feedback_label = None # The "Correct" and "Wrong" message
+
+        self.difficulty = "Easy" # The chosen level and it will overwrite when the used picks one
+        self.score = 0 # The runnin g total
+        self.question_number = 0 # How many questions have been asked already
+        self.attempt = 1 # It checks if its the first or second attempt
+        self.correct_answer = 0 # This shows the correct answer if user input is wrong 
+        self.locked = False  # Set to True while the feedback appear so additional presses to enter are disregarded
+
+    # Replace the current screen. One Tk root, one swapped frame
+    def _new_frame(self): # It is an internal helper because of the leading underscore 
+        if self.frame is not None:
+            self.frame.destroy()
+        self.frame = tk.Frame(self.root)
+        self.frame.pack(expand=True, fill="both")
+        return self.frame
