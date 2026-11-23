@@ -71,3 +71,36 @@ class MathsQuiz:
     @staticmethod
     def decideOperation():
         return random.choice(["+", "-"])
+
+    # Randomly returns either a Additon or Subtracion 
+    @staticmethod
+    def decideOperation():
+        return random.choice(["+", "-"])
+
+    # This shows and generates a question so that it is clear and focus to the entry
+    def displayProblem(self):
+        self.question_number += 1
+        self.attempt = 1
+        self.locked = False
+
+        a = self.randomInt(self.difficulty)
+        b = self.randomInt(self.difficulty)
+        operation = self.decideOperation()
+        self.correct_answer = a + b if operation == "+" else a - b
+
+        frame = self._new_frame()
+        self.status_label = tk.Label(frame, font=("Times New Roman", 11))
+        self.status_label.pack(pady=10)
+        self._update_status()
+
+        tk.Label(frame, text=f"{a} {operation} {b} =", font=("Times New Roman", 24, "bold")).pack(pady=15)
+
+        self.entry = tk.Entry(frame, font=("Arial", 16), width=10, justify="center")
+        self.entry.pack()
+        self.entry.focus_set()
+        self.entry.bind("<Return>", self.handle_submit)
+
+        self.feedback_label = tk.Label(frame, text="", font=("Times New Roman", 12), wraplength=380)
+        self.feedback_label.pack(pady=12)
+
+        tk.Button(frame, text="Submit", width=12, font=("Times New Roman", 12), command=self.handle_submit).pack()
