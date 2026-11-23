@@ -262,3 +262,36 @@ class StudentManager:
             messagebox.showinfo("Several matches", "More than one student matches. Enter the student number instead.")
             return None
         return matches[0]
+    
+    # Menu items helpers for 1-8
+    
+    # Item 1: This shows every student and thier class summary
+    def show_all(self):
+        self._clear_controls() # item 1 does not need user input
+        self._show(self.students, self._class_summary(self.students))
+
+    # Item 2: This is for when user shows where the user can find a specific student by typing student name or number
+    def show_find(self):
+        self._clear_controls()
+        tk.Label(self.controls, text="Student name or number:").pack(side="left")
+        entry = tk.Entry(self.controls, width=24) # This is for where the user types the search
+        entry.pack(side="left", padx=6)
+        entry.focus_set() # This is for the cursor that is ready to type
+
+        def search(event=None): # This is where the action is run on the button or enter key
+            matches = find_students(self.students, entry.get())
+            self._show(matches, f"{len(matches)} matching student(s)." if matches else "No student found.") # If the match has found no student
+
+        entry.bind("<Return>", search) # This is the enter that triggers the search
+        tk.Button(self.controls, text="Search", command=search).pack(side="left")
+        self._show([], "Enter a name (or one part of the name) or a student number.")  # This shows the instructions for the user input
+
+    # Items 3 and 4: This is for when output shows the highest (Item 3) or lowest (Item 4) total score it also shows all ties to the user
+    def show_extreme(self, highest):
+        self._clear_controls()
+        if not self.students: # If there is no student to show
+            self._show([], "There are no students.")
+            return
+        chosen = extreme_students(self.students, highest) # This is for one student or several if tied will be shown
+        word = "Highest" if highest else "Lowest"
+        self._show(chosen, f"{word} total score: {chosen[0].total()} / {Max_Total} ({len(chosen)} student(s)).")
