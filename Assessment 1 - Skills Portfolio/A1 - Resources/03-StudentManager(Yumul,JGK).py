@@ -397,3 +397,29 @@ class StudentManager:
             self._show([student], f"Updated {field} for {student.name}. File saved.")
 
         tk.Button(self.controls, text="Update", command=update).grid(row=3, column=1, sticky="w", pady=6)
+        
+# This Loads the data and then builds the window or will shows an error and quits
+def main():
+    root = tk.Tk() # This is for the one main window
+    root.title("Student Manager")
+    root.geometry("1000x560")
+
+    try:
+        students, warnings = load_students(Student_File) # THis read the data file
+    except (OSError, ValueError) as error:
+        # THis is for the error in the file OSError: file missing/unreadable while ValueError: empty file, bad first line or bad encoding (UnicodeDecodeError is a subclass of ValueError)
+        root.withdraw() # This does not flash an empty window behind the error
+        messagebox.showerror("Could not load students", f"{Student_File.name}: {error}")
+        root.destroy()
+        return
+
+    StudentManager(root, students, Student_File)  # build the interface
+    if warnings: # If some lines were skipped: tell the user
+        shown = "\n".join(warnings[:10]) + ("\n..." if len(warnings) > 10 else "")
+        messagebox.showwarning("Some records were skipped", shown + "\n\nSkipped lines are NOT kept if you later add, delete or update a record.")
+    root.mainloop() # It wait for user to click
+
+
+# This runs only when this file is executed directly not when imported
+if __name__ == "__main__":
+    main()
