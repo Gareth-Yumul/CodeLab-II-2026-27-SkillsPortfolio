@@ -158,3 +158,30 @@ class MathsQuiz:
             self.entry.delete(0, tk.END)
         else:
             self._finish_question()  # second miss: 0 points and answer will be shown
+
+    # It locks the input of user and after a short pause it moves on to the next step
+    def _finish_question(self):
+        self.locked = True
+        self._update_status()
+        self.root.after(Feedback_Delay_Ms, self._next_step)
+
+    # It shows the next question or result once all questions are done
+    def _next_step(self):
+        if self.question_number < Questions_Per_Game:
+            self.displayProblem()
+        else:
+            self.displayResults()
+            
+    # This refreshes the "Question: x/10 Score: Y" at the top of the screen
+    def _update_status(self):
+        self.status_label.config(
+            text=f"Question {self.question_number}/{Questions_Per_Game} Score: {self.score}")
+        
+    # This is the color part of the messages display under the answer box
+    def _set_feedback(self, message, colour):
+        self.feedback_label.config(text=message, fg=colour)
+
+    # This returns the grade of the user 
+    @staticmethod
+    def grade_for(score):
+        return next(grade for cutoff, grade in Grade_Boundaries if score >= cutoff)
