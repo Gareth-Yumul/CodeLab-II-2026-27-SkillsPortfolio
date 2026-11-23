@@ -62,3 +62,53 @@ Sort_Keys = {
     "Student number": lambda student: student.code,
     "Overall %": lambda student: student.percentage(),
 }
+
+# Data Handling (This pare has no GUI code so that it can be tested by its own)
+
+# Turn text into a whole number within [low, high], or raise ValueError saying why
+def parse_int(text, low, high, label):
+    text = text.strip() # This allow it to ignore spaces around the number
+    if not (text.isascii() and text.isdigit()): # Digits only allow like 0-9 no signsm, decimals or 1_0
+        raise ValueError(f"{label} must be a whole number.")
+    number = int(text) # safe now that text is only digits
+    if not low <= number <= high: # This reminds user if user out of range 
+        raise ValueError(f"{label} must be between {low} and {high}.")
+    return number
+
+# It builds a student from one line of the line or it raise a ValueError
+def parse_line(line):
+    parts = [part.strip() for part in line.split(",")] # split on commas and trim each piece
+    if len(parts) != 3 + Coursework_Count: # code, name, three coursework marks, exam
+        raise ValueError(f"expected {3 + Coursework_Count} comma-separated values")
+    code = parse_int(parts[0], Min_Code, Max_Code, "Student number") # first value
+    name = parts[1] # second value
+    if not name: # a blank name isn't a valid record
+        raise ValueError("name is empty")
+    coursework = [parse_int(mark, 0, Coursework_Max, "Coursework mark") for mark in parts[2:2 + Coursework_Count]] # the three coursework marks
+    exam = parse_int(parts[-1], 0, Exam_Max, "Exam mark") # the last value
+    return Student(code, name, coursework, exam)
+
+# Read the file; return (list of students, list of warning messages about skipped lines)
+def load_students(path):
+    students, warnings, seen_codes = [], [], set() # This shoes the results so far
+    with open(path, encoding="utf-8-sig") as file: # this is the utf-8-sig drops a Windows BOM
+        lines = [line.strip() for line in file if line.strip()] # This is for non-blank lines only
+    if not lines: # If file has nothing at all
+        raise ValueError("The file is empty.")
+    header = lines[0] # The first line is the number of student 
+    if not (header.isascii() and header.isdigit()): # This must be a whole number
+        raise ValueError("The first line must be the number of students.")
+    for number, line in enumerate(lines[1:], start=1): # The number of the records from 1
+        try:
+            student = parse_line(line) # This try to read the record
+        except ValueError as error: # If bad recors it note it and move on
+            warnings.append(f"Record {number} skipped: {error}")
+            continue
+        if student.code in seen_codes: # If two students cant share the same student number
+            warnings.append(f"Record {number} skipped: duplicate student number {student.code}")
+            continue
+        seen_codes.add(student.code) # This allow to remember the student number
+        students.append(student) # It allows to keep the student
+    if int(header) != len(students): # It checks only valid lines even if there are other broken lines
+        warnings.append(f"The file says {header} students but {len(students)} valid records were loaded.")
+    return students, warnings
