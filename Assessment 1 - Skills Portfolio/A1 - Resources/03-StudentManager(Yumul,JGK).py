@@ -144,3 +144,32 @@ def average_percentage(students):
     if not students: # This helps avoud it bein g divided by zero since it will crash 
         return 0.0
     return sum(student.percentage() for student in students) / len(students)
+
+# This checks what the user typed for one field of a studenr record and return a cleaned value or raise ValueErro
+def validate_field(field, text, students, current=None):
+    if field == "Student number":
+        code = parse_int(text, Min_Code, Max_Code, field) # Numbers must be 1000 - 9999 for student number
+        if any(s.code == code and s is not current for s in students): # The student number is used if user input a same student number 
+            raise ValueError(f"Student number {code} is already used.")
+        return code
+    if field == "Name":
+        name = text.strip() # This trimp spaces
+        if not name:
+            raise ValueError("Name can't be empty.") # Name should not be empty
+        if "," in name:
+            raise ValueError("Name can't contain a comma.") # Name should not have a comma cause that will split the name in two inside the file
+        return name
+    if field == "Exam mark":
+        return parse_int(text, 0, Exam_Max, field) # Exam mark must only be from  0 to 100
+    return parse_int(text, 0, Coursework_Max, field) # Courseworks 1, 2, and 3 are worth 20 each so total is 60
+
+# Changes one field of a student object using a value that has already been validated
+def apply_field(student, field, value):
+    if field == "Student number":
+        student.code = value
+    elif field == "Name":
+        student.name = value
+    elif field == "Exam mark":
+        student.exam = value
+    else: # This is an else statement because courswrok 1,2,3 are left which are all storers in a same way
+        student.coursework[int(field[-1]) - 1] = value
