@@ -107,3 +107,20 @@ def main():
     root.title("Alexa tell me a Joke")
     root.geometry("520x320")
     root.resizable(False, False)
+
+    # This loads the file and if file has no jokes an error will pop-up and quit instead of crashing down
+    try:
+        jokes = load_jokes(Jokes_File)
+    except (OSError, ValueError) as error: # ValueError: no jokes that can be used, together with poor encoding while OSError: file missing or unreadable
+        root.withdraw()  # THis avoid flashing a blank window behind the error dialog
+        messagebox.showerror("Could not load jokes", f"{Jokes_File.name}: {error}")
+        root.destroy()
+        return
+    
+    # This builds the app on the window then starts the event loop and waits for clicks
+    JokeApp(root, jokes)
+    root.mainloop()
+
+# This runs only when this file is executed directly not when imported
+if __name__ == "__main__":
+    main()
