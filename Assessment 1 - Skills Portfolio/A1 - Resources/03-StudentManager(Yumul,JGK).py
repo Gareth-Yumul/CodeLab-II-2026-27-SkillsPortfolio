@@ -112,3 +112,35 @@ def load_students(path):
     if int(header) != len(students): # It checks only valid lines even if there are other broken lines
         warnings.append(f"The file says {header} students but {len(students)} valid records were loaded.")
     return students, warnings
+
+# This write all valid student line back to the file in the fist line with that being count
+def save_students(path, students):
+    lines = [str(len(students))] + [student.to_line() for student in students]  # Header plus Records
+    temp = path.with_suffix(".tmp")  # This write a temporary file first
+    temp.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    temp.replace(path)  # Then it swap in so that a crash mid write cannot corrupt the read file
+
+# Students matching the text: a number matches exactly, anything else matches part of a name
+def find_students(students, query):
+    query = query.strip() #this ignores surrounding spaces like " Jake" = "Jake"
+    if not query: 
+        return []
+    if query.isascii() and query.isdigit(): # This decides whether the text is a student number
+        return [student for student in students if student.code == int(query)]
+    return [student for student in students if query.lower() in student.name.lower()]
+
+# The students in the list is sorted by order  
+def sort_students(students, field, descending):
+    return sorted(students, key=Sort_Keys[field], reverse=descending)
+
+# This shows the student with the highist or lowest total score it also handles ties so the list may return more than one student
+def extreme_students(students, highest):
+    totals = [student.total() for student in students] # This is a list of everyone's total score
+    target = max(totals) if highest else min(totals) # Is an if/else statement that shows the highest total is highest is trure and else lowest
+    return [student for student in students if student.total() == target]
+
+# This calculates the average overall percentage across the list of students but it will be 0 if there is no students
+def average_percentage(students):
+    if not students: # This helps avoud it bein g divided by zero since it will crash 
+        return 0.0
+    return sum(student.percentage() for student in students) / len(students)
