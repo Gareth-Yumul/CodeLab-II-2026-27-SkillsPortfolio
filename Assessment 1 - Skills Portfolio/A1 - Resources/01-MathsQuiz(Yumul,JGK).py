@@ -128,3 +128,33 @@ class MathsQuiz:
             self.displayMenu()
         else:
             self.root.destroy()
+
+    # Helpers
+
+    # This start the game 
+    def _start_game(self, difficulty):
+        self.difficulty = difficulty
+        self.score = 0
+        self.question_number = 0
+        self.displayProblem()
+
+    # It validate input then check it folllow it by awarding points and advance
+    def handle_submit(self, event=None):
+        if self.locked:
+            return
+
+        # A bad input never costs an attempt 
+        text = self.entry.get().strip()
+        if not Integer_Pattern.fullmatch(text):
+            self._set_feedback("Please enter a whole number like: 42 or -54.", "orange")
+            return
+        
+        # This part runs the result of the user and it will determine the score of each question and advances the next part 
+        if self.isCorrect(int(text), self.correct_answer):
+            self.score += Points_First_Try if self.attempt == 1 else Points_Second_Try
+            self._finish_question()
+        elif self.attempt == 1:
+            self.attempt = 2
+            self.entry.delete(0, tk.END)
+        else:
+            self._finish_question()  # second miss: 0 points and answer will be shown
