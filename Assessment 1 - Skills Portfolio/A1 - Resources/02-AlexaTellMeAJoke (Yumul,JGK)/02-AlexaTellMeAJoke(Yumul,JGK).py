@@ -40,19 +40,19 @@ def load_jokes(path):
 
 # Holds the joke list and the widgets and decides which joke to show next
 class JokeApp:
-    def __init__(self, root, jokes): #Builds the window widget and put it at a starting state 
+    def __init__(self, root, jokes): # Builds the window widget and put it at a starting state 
         self.root = root # Main window
         self.jokes = jokes # The list of (setup, punchline) pairs
         self.order = [] # This shuffled the jokes which indicate the current round
-        self.position = -1 # where we are in self.order; -1 = nothing shown yet
+        self.position = -1 # Where we are in self.order -1 = nothing shown yet
 
         root.configure(bg=BG_COLOR)
 
-        # Header at the top: the logo on the left and the title on its right
+        # Header at the top to see the logo on the left and the title on its right
         header = tk.Frame(root, bg=HEADER_BG)
         header.pack(fill="x")
 
-        # Shrinks the logo (subsample 5 = 1/5 of the size), if the png is missing the header just shows the title
+        # Shrinks the logo (subsample 5 = 1/5 of the size) but if the png is missing the header just shows the title
         try:
             self.logo = tk.PhotoImage(file=str(Logo_File)).subsample(5)  # self.logo must be kept or tkinter deletes the picture
             tk.Label(header, image=self.logo, bg=HEADER_BG).pack(side="left", padx=(15, 5), pady=5)
