@@ -7,6 +7,7 @@ Exercise 1: Maths Quiz
 import random # Imports random Number
 import re  # Imports regular Expression
 import tkinter as tk # GUI toolkit
+from pathlib import Path # Builds the logo's file path from this script's location
 from tkinter import messagebox # Imports pop-up message such as "play again?"
 
 Questions_Per_Game = 10 #The amount of questions you'll get in a game
@@ -28,6 +29,21 @@ Grade_Boundaries = [(90, "A+"), (80, "A"), (70, "B"), (60, "C"), (50, "D"), (0, 
 # This allows user input to be valis such as "1_000" or "-54" but inputs such as "abc" or "4x" invalid
 Integer_Pattern = re.compile(r"-?\d+")
 
+# Design Part: colours, buttons and logo (appearance only, no game logic)
+Navy = "#1b2a49" # Dark navy taken from the BSU logo text: used for titles and text
+Blue = "#1f6fb2" # Main blue from the logo: used for buttons and the header line
+Light_Blue = "#4a9bd6" # Lighter blue from the logo: used for hover colour and borders
+Background = "#f2f7fc" # Very light blue-white: the colour of every screen
+White = "#ffffff" # The header bar, so it blends with the logo's white background
+Good_Colour = "#15803d" # Dark green for "Correct", readable on the light background
+Bad_Colour = "#b91c1c" # Dark red for "Wrong"
+Warn_Colour = "#b45309" # Dark amber for the "enter a whole number" message
+Logo_File = Path(__file__).parent / "bsu_logo.png" # The picture must sit next to this script
+Logo_Shrink = 8 # Shows every 8th pixel so the 474-pixel logo becomes about 60 pixels (whole numbers only)
+
+# One style shared by every button so they all look the same
+Button_Style = {"bg": Blue, "fg": White, "activebackground": Light_Blue, "activeforeground": White, "relief": "flat", "bd": 0, "cursor": "hand2"}
+
 # This class define the blueprint that bundles data (score, question number) with the functions that use it
 class MathsQuiz:
     
@@ -44,22 +60,41 @@ class MathsQuiz:
         self.attempt = 1 # It checks if its the first or second attempt
         self.correct_answer = 0 # This shows the correct answer if user input is wrong 
         self.locked = False  # Set to True while the feedback appear so additional presses to enter are disregarded
+        self.logo = self._load_logo() # The header picture (None if it can't be loaded). Kept on self so Tkinter doesn't discard it
 
-    # Replace the current screen. One Tk root, one swapped frame
+    # This replace the current screen, one Tk root to one swapped frame
     def _new_frame(self): # It is an internal helper because of the leading underscore 
         if self.frame is not None:
             self.frame.destroy()
-        self.frame = tk.Frame(self.root)
+        self.frame = tk.Frame(self.root, bg=Background) # Screen background colour
         self.frame.pack(expand=True, fill="both")
+        self._build_header() # Logo and title at the top of every screen
         return self.frame
+
+    # Loads and shrinks the logo, and returns None instead of crashing if the file is missing
+    def _load_logo(self):
+        try:
+            picture = tk.PhotoImage(file=str(Logo_File)) # Reads the PNG file
+            return picture.subsample(Logo_Shrink) # Shrinks it by a whole-number factor
+        except tk.TclError: # File missing or unreadable
+            return None
+
+    # Draws the title bar with the logo beside the title
+    def _build_header(self):
+        bar = tk.Frame(self.frame, bg=White) # White bar so the logo's white background blends in
+        bar.pack(fill="x") # Stretch across the window
+        if self.logo is not None: # Only show the picture if it loaded
+            tk.Label(bar, image=self.logo, bg=White).pack(side="left", padx=10, pady=8) # Logo on the left
+        tk.Label(bar, text="Maths Quiz", font=("Times New Roman", 22, "bold"), bg=White, fg=Navy).pack(side="left", padx=1) # Title beside the logo
+        tk.Frame(self.frame, bg=Blue, height=3).pack(fill="x") # Thin blue line under the header
 
         # Requires Function
     # This show difficulty buttons (Easy / Moderate / Advanced)
     def displayMenu(self):
         frame = self._new_frame()
-        tk.Label(frame, text="DIFFICULTY LEVEL", font=("Times New Roman", 18, "bold")).pack(pady=20)
+        tk.Label(frame, text="DIFFICULTY LEVEL", font=("Times New Roman", 18, "bold"), bg=Background, fg=Navy).pack(pady=20)
         for number, name in enumerate(Difficulties, start=1):
-            tk.Button(frame, text=f"{number}. {name}", width=20, font=("Times New Roman", 12), command=lambda level=name: self._start_game(level),).pack(pady=6)
+            tk.Button(frame, text=f"{number}. {name}", width=20, font=("Times New Roman", 12), command=lambda level=name: self._start_game(level), **Button_Style).pack(pady=6)
             
     # Returns a single random integer whose digit count fits to the difficulty
     @staticmethod # Marks a method that doesn't use. It needs only the output
@@ -89,39 +124,39 @@ class MathsQuiz:
         self.correct_answer = a + b if operation == "+" else a - b
 
         frame = self._new_frame()
-        self.status_label = tk.Label(frame, font=("Times New Roman", 11))
+        self.status_label = tk.Label(frame, font=("Times New Roman", 11), bg=Background, fg=Navy)
         self.status_label.pack(pady=10)
         self._update_status()
 
-        tk.Label(frame, text=f"{a} {operation} {b} =", font=("Times New Roman", 24, "bold")).pack(pady=15)
+        tk.Label(frame, text=f"{a} {operation} {b} =", font=("Times New Roman", 24, "bold"), bg=Background, fg=Navy).pack(pady=15)
 
-        self.entry = tk.Entry(frame, font=("Arial", 16), width=10, justify="center")
+        self.entry = tk.Entry(frame, font=("Arial", 16), width=10, justify="center", relief="flat", highlightthickness=2, highlightbackground=Light_Blue, highlightcolor=Blue) # Blue border around the answer box
         self.entry.pack()
         self.entry.focus_set()
         self.entry.bind("<Return>", self.handle_submit)
 
-        self.feedback_label = tk.Label(frame, text="", font=("Times New Roman", 12), wraplength=380)
+        self.feedback_label = tk.Label(frame, text="", font=("Times New Roman", 12), wraplength=380, bg=Background)
         self.feedback_label.pack(pady=12)
 
-        tk.Button(frame, text="Submit", width=12, font=("Times New Roman", 12), command=self.handle_submit).pack()
+        tk.Button(frame, text="Submit", width=12, font=("Times New Roman", 12), command=self.handle_submit, **Button_Style).pack()
 
     # This check and verifies the input of the user wether it is right or wrong
     def isCorrect(self, user_answer, correct_answer):
         if user_answer == correct_answer:
-            self._set_feedback("Correct! :>", "green")
+            self._set_feedback("Correct! :>", Good_Colour)
             return True
         if self.attempt == 1:
-            self._set_feedback("Wrong. You have one more try. :|", "red")
+            self._set_feedback("Wrong. You have one more try. :|", Bad_Colour)
         else:
-            self._set_feedback(f"Wrong. The answer was {correct_answer}. :<", "red")
+            self._set_feedback(f"Wrong. The answer was {correct_answer}. :<", Bad_Colour)
         return False
 
     # This display the result of user and asks if user wants to play again
     def displayResults(self):
         frame = self._new_frame()
-        tk.Label(frame, text="Quiz Complete! <3", font=("Times New Roman", 20, "bold")).pack(pady=20)
-        tk.Label(frame, text=f"Score: {self.score} / {Max_Score}", font=("Times New Roman", 16)).pack()
-        tk.Label(frame, text=f"Rank: {self.grade_for(self.score)}", font=("Times New Roman", 16)).pack(pady=8)
+        tk.Label(frame, text="Quiz Complete! <3", font=("Times New Roman", 20, "bold"), bg=Background, fg=Navy).pack(pady=20)
+        tk.Label(frame, text=f"Score: {self.score} / {Max_Score}", font=("Times New Roman", 16), bg=Background, fg=Navy).pack()
+        tk.Label(frame, text=f"Rank: {self.grade_for(self.score)}", font=("Times New Roman", 16), bg=Background, fg=Navy).pack(pady=8)
 
         self.root.update_idletasks()  # Before the dialog box opens it write down the results
         if messagebox.askyesno("Play again?", "Would you like to play again?"):
@@ -146,7 +181,7 @@ class MathsQuiz:
         # A bad input never costs an attempt 
         text = self.entry.get().strip()
         if not Integer_Pattern.fullmatch(text):
-            self._set_feedback("Please enter a whole number like: 42 or -54.", "orange")
+            self._set_feedback("Please enter a whole number like: 42 or -54.", Warn_Colour)
             return
         
         # This part runs the result of the user and it will determine the score of each question and advances the next part 
@@ -190,7 +225,8 @@ class MathsQuiz:
 def main():
     root = tk.Tk()
     root.title("Maths Quiz")
-    root.geometry("420x340")
+    root.geometry("460x470") # Taller than before to make room for the header
+    root.configure(bg=Background) # Window background colour
     root.resizable(False, False)
     MathsQuiz(root).displayMenu()
     root.mainloop()
