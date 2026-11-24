@@ -12,7 +12,14 @@ from tkinter import messagebox  # Error message pop-up if the joke file can't be
 # This allows to connect the python file to the txt file
 Jokes_File = Path(__file__).parent / "randomJokes.txt"
 
-# Reads the jokes.txt file and returns a list of (setup, punchline) pairs, skipping bad lines
+# Design part only for the logo file sits in the same folder as this script, and the colors are taken from the logo
+Logo_File = Path(__file__).parent / "bsu_logo.png"
+BG_COLOR = "#EAF3FA" # Light blue background of the window
+HEADER_BG = "#FFFFFF" # White header so the dark logo text stays readable
+BLUE_DARK = "#1F6AA5" # For the button color same blue as the BSU letters
+BLUE_LIGHT = "#4A9AD4" # This is thehover color when mouse is on the button
+
+# Reads the jokes.txt file and returns a list of (setup, punchline) pairs allowing to skip bad lines
 def load_jokes(path):
     jokes = []
     with open(path, encoding="utf-8-sig") as file:
@@ -20,7 +27,7 @@ def load_jokes(path):
             line = line.strip()
             if line.startswith("-"):
                 line = line[1:].strip()
-            if "?" not in line:  # No questions mark jokes means nothing to split
+            if "?" not in line: # No questions mark jokes means nothing to split
                 continue
             setup, _, punchline = line.partition("?")
             setup, punchline = setup.strip(), punchline.strip()
@@ -36,31 +43,46 @@ class JokeApp:
     def __init__(self, root, jokes): #Builds the window widget and put it at a starting state 
         self.root = root # Main window
         self.jokes = jokes # The list of (setup, punchline) pairs
-        self.order = []  # This shuffled the jokes which indicate the current round
-        self.position = -1  # where we are in self.order; -1 = nothing shown yet
+        self.order = [] # This shuffled the jokes which indicate the current round
+        self.position = -1 # where we are in self.order; -1 = nothing shown yet
+
+        root.configure(bg=BG_COLOR)
+
+        # Header at the top: the logo on the left and the title on its right
+        header = tk.Frame(root, bg=HEADER_BG)
+        header.pack(fill="x")
+
+        # Shrinks the logo (subsample 5 = 1/5 of the size), if the png is missing the header just shows the title
+        try:
+            self.logo = tk.PhotoImage(file=str(Logo_File)).subsample(5)  # self.logo must be kept or tkinter deletes the picture
+            tk.Label(header, image=self.logo, bg=HEADER_BG).pack(side="left", padx=(15, 5), pady=5)
+        except tk.TclError:
+            pass
+
+        tk.Label(header, text="Alexa, Tell Me a Joke =)", font=("Times New Roman", 20, "bold"), fg=BLUE_DARK, bg=HEADER_BG).pack(side="left", padx=10)
 
         # Label that shows the joke's setup
-        self.setup_label = tk.Label(root, text="Press the button to hear a joke.", font=("Times New Roman", 16, "bold"), wraplength=440, justify="center")
+        self.setup_label = tk.Label(root, text="Press the button to hear a joke.", font=("Times New Roman", 16, "bold"), wraplength=440, justify="center", bg=BG_COLOR)
         self.setup_label.pack(pady=(25, 10), padx=20)
 
         # Label for the punchline
-        self.punchline_label = tk.Label(root, text="", font=("Times New Roman", 16, "italic"), wraplength=440, justify="center")
+        self.punchline_label = tk.Label(root, text="", font=("Times New Roman", 16, "italic"), wraplength=440, justify="center", bg=BG_COLOR)
         self.punchline_label.pack(pady=10, padx=20)
 
         # Containers for the buttons that sit in 2x2 grid
-        buttons = tk.Frame(root)
+        buttons = tk.Frame(root, bg=BG_COLOR)
         buttons.pack(pady=15)
 
         # Starts the session, then disables the Alexa tell me a Joke" button allowing the "Next Joke" to take over
-        self.tell_button = tk.Button(buttons, text="Alexa tell me a Joke", width=20, command=self.tell_joke)
+        self.tell_button = tk.Button(buttons, text="Alexa tell me a Joke", width=20, command=self.tell_joke, bg=BLUE_DARK, fg="white", activebackground=BLUE_LIGHT, activeforeground="white")
         self.tell_button.grid(row=0, column=0, padx=6, pady=4)
 
         # Disabled until a joke is on screen so that there is nothing to reveal yet
-        self.punchline_button = tk.Button(buttons, text="Show Punchline", width=20, state="disabled", command=self.show_punchline)
+        self.punchline_button = tk.Button(buttons, text="Show Punchline", width=20, state="disabled", command=self.show_punchline, bg=BLUE_DARK, fg="white", activebackground=BLUE_LIGHT, activeforeground="white")
         self.punchline_button.grid(row=0, column=1, padx=6, pady=4)
-        self.next_button = tk.Button(buttons, text="Next Joke", width=20, state="disabled", command=self.next_joke)
+        self.next_button = tk.Button(buttons, text="Next Joke", width=20, state="disabled", command=self.next_joke, bg=BLUE_DARK, fg="white", activebackground=BLUE_LIGHT, activeforeground="white")
         self.next_button.grid(row=1, column=0, padx=6, pady=4)
-        tk.Button(buttons, text="Quit", width=20, command=root.destroy).grid(row=1, column=1, padx=6, pady=4)
+        tk.Button(buttons, text="Quit", width=20, command=root.destroy, bg=BLUE_DARK, fg="white", activebackground=BLUE_LIGHT, activeforeground="white").grid(row=1, column=1, padx=6, pady=4)
         
     # Moves to the next joke in shuffled order then resuffles when the first rounf is finish
     def _advance(self):
@@ -105,7 +127,7 @@ class JokeApp:
 def main():
     root = tk.Tk()
     root.title("Alexa tell me a Joke")
-    root.geometry("520x320")
+    root.geometry("520x420")
     root.resizable(False, False)
 
     # This loads the file and if file has no jokes an error will pop-up and quit instead of crashing down
