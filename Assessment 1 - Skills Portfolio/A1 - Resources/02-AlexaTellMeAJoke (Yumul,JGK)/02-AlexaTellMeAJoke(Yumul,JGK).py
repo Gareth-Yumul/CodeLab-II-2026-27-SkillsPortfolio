@@ -12,7 +12,7 @@ from tkinter import messagebox  # Error message pop-up if the joke file can't be
 # This allows to connect the python file to the txt file
 Jokes_File = Path(__file__).parent / "randomJokes.txt"
 
-# Design part only for the logo file sits in the same folder as this script, and the colors are taken from the logo
+# Design part only for the logo file sits in the same folder as this script and the colors are taken from the logo
 Logo_File = Path(__file__).parent / "bsu_logo.png"
 BG_COLOR = "#EAF3FA" # Light blue background of the window
 HEADER_BG = "#FFFFFF" # White header so the dark logo text stays readable
