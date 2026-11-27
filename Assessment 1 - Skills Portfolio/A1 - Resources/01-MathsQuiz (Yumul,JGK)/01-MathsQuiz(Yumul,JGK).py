@@ -88,7 +88,7 @@ class MathsQuiz:
         tk.Label(bar, text="Maths Quiz", font=("Times New Roman", 22, "bold"), bg=White, fg=Navy).pack(side="left", padx=1) # Title beside the logo
         tk.Frame(self.frame, bg=Blue, height=3).pack(fill="x") # Thin blue line under the header
 
-        # Requires Function
+    # Requires Function
     # This show difficulty buttons (Easy / Moderate / Advanced)
     def displayMenu(self):
         frame = self._new_frame()
