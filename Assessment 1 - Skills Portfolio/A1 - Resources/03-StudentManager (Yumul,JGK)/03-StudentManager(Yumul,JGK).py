@@ -26,6 +26,17 @@ Fields = ["Student number", "Name", "Coursework 1", "Coursework 2", "Coursework 
 # Table column headings for the output
 Column_Names = ("Name", "Student number", f"Coursework (/{Coursework_Count * Coursework_Max})", f"Exam (/{Exam_Max})", "Overall %", "Grade")
 
+# Design for the logo picture and the colours taken from the BSU logo
+Logo_File = Path(__file__).parent / "bsu_logo.png"  # Must be a PNG beside this script (tkinter cannot open JPG)
+Navy = "#1f2a44"  # Dark text colour of the logo, used for the menu
+Blue = "#1368a1"  # Main blue of the logo, used for buttons and table headings
+Light_Blue = "#4a9fd8"  # Light blue of the logo, used when a row is selected
+Pale_Blue = "#eef5fb"  # Soft background for the working area
+Stripe = "#f5f9fd"  # Every second table row so the rows are easy to follow
+White = "#ffffff"
+Quit_Red = "#b23a48"  # The Quit button stands out from the others
+Font = "Segoe UI"  # Clean font for windows default (other systems use a similar font)
+
 # This class is for the student record and the calculation that belongs to it
 class Student:
     def __init__(self, code, name, coursework, exam):
@@ -63,7 +74,7 @@ Sort_Keys = {
     "Overall %": lambda student: student.percentage(),
 }
 
-# Data Handling (This pare has no GUI code so that it can be tested by its own)
+# Data Handling
 
 # Turn text into a whole number within [low, high], or raise ValueError saying why
 def parse_int(text, low, high, label):
@@ -71,26 +82,26 @@ def parse_int(text, low, high, label):
     if not (text.isascii() and text.isdigit()): # Digits only allow like 0-9 no signsm, decimals or 1_0
         raise ValueError(f"{label} must be a whole number.")
     number = int(text) # safe now that text is only digits
-    if not low <= number <= high: # This reminds user if user out of range 
+    if not low <= number <= high: # This reminds user if user is out of range
         raise ValueError(f"{label} must be between {low} and {high}.")
     return number
 
 # It builds a student from one line of the line or it raise a ValueError
 def parse_line(line):
-    parts = [part.strip() for part in line.split(",")] # split on commas and trim each piece
-    if len(parts) != 3 + Coursework_Count: # code, name, three coursework marks, exam
+    parts = [part.strip() for part in line.split(",")] # Split on commas and trim each piece
+    if len(parts) != 3 + Coursework_Count: # Code, name, three coursework marks and exam
         raise ValueError(f"expected {3 + Coursework_Count} comma-separated values")
-    code = parse_int(parts[0], Min_Code, Max_Code, "Student number") # first value
-    name = parts[1] # second value
-    if not name: # a blank name isn't a valid record
+    code = parse_int(parts[0], Min_Code, Max_Code, "Student number") # First value
+    name = parts[1] # Second value
+    if not name: # A blank name isn't a valid record
         raise ValueError("name is empty")
-    coursework = [parse_int(mark, 0, Coursework_Max, "Coursework mark") for mark in parts[2:2 + Coursework_Count]] # the three coursework marks
-    exam = parse_int(parts[-1], 0, Exam_Max, "Exam mark") # the last value
+    coursework = [parse_int(mark, 0, Coursework_Max, "Coursework mark") for mark in parts[2:2 + Coursework_Count]] # The three coursework marks
+    exam = parse_int(parts[-1], 0, Exam_Max, "Exam mark") # The last value
     return Student(code, name, coursework, exam)
 
-# Read the file; return (list of students, list of warning messages about skipped lines)
+# This read the file return (list of students, list of warning messages about skipped lines)
 def load_students(path):
-    students, warnings, seen_codes = [], [], set() # This shoes the results so far
+    students, warnings, seen_codes = [], [], set() # This shows the results so far
     with open(path, encoding="utf-8-sig") as file: # this is the utf-8-sig drops a Windows BOM
         lines = [line.strip() for line in file if line.strip()] # This is for non-blank lines only
     if not lines: # If file has nothing at all
@@ -183,10 +194,27 @@ class StudentManager:
         self.root = root # This is the main window
         self.students = students # This is the list of student object and the working copy that can either add, delete or edit
         self.path = path # This is to show where the user inputs changes are saved
+        self._apply_theme() # This sets the colours and fonts before any widget is made
 
-        menu = tk.Frame(root) # This is the left column where it holds all the menu buttons
-        menu.pack(side="left", fill="y", padx=10, pady=10)
-        tk.Label(menu, text="MENU", font=("Times New Roman", 16, "bold")).pack(pady=(0, 8))
+        header = tk.Frame(root, bg=White) # This is the top banner with the logo beside the title
+        header.pack(side="top", fill="x")
+        try:
+            raw_logo = tk.PhotoImage(file=str(Logo_File))
+            Logo_Height = 110 # Target height in pixels, change this to make it bigger or smaller
+            factor = max(1, round(raw_logo.height() / Logo_Height)) # Subsample only accepts whole numbers
+            self.logo = raw_logo.subsample(factor, factor) # Kept on self or tkinter throws the picture away
+            tk.Label(header, image=self.logo, bg=White).pack(side="left", padx=(20, 20), pady=6)
+            root.iconphoto(False, raw_logo) # Full size version for the window icon
+        except tk.TclError: # If the picture is missing the program still runs without it
+            pass
+        titles = tk.Frame(header, bg=White) # This holds the title and the subtitle on top of each other
+        titles.pack(side="left", pady=8)
+        tk.Label(titles, text="Student Manager", font=(Font, 24, "bold"), fg=Navy, bg=White).pack(anchor="w")
+        tk.Frame(root, bg=Blue, height=4).pack(side="top", fill="x") # This is the thin blue line under the banner
+
+        menu = tk.Frame(root, bg=Navy) # This is the left column where it holds all the menu buttons
+        menu.pack(side="left", fill="y")
+        tk.Label(menu, text="MENU", font=(Font, 15, "bold"), fg=White, bg=Navy).pack(pady=(16, 10))
         options = [  # Button text and the function to run
             ("1. View all student records", self.show_all),
             ("2. View individual student record", self.show_find),
@@ -198,19 +226,24 @@ class StudentManager:
             ("8. Update a student's record", self.show_update),
         ]
         for text, command in options:  # This is a one button per action
-            tk.Button(menu, text=text, width=34, anchor="w", command=command).pack(pady=3)
-        tk.Button(menu, text="Quit", width=34, command=root.destroy).pack(pady=(15, 0))
+            button = tk.Button(menu, text=text, width=34, anchor="w", command=command, bg=Navy, fg=White, activebackground=Blue, padx=14, pady=6)
+            button.pack(padx=10, pady=1)
+            button.bind("<Enter>", lambda event, b=button: b.config(bg=Blue)) # This lights up the button when the mouse is over it
+            button.bind("<Leave>", lambda event, b=button: b.config(bg=Navy)) # This goes back to normal when the mouse leaves
+        tk.Button(menu, text="Quit", width=34, command=root.destroy, bg=Quit_Red, activebackground="#8e2b38", pady=6).pack(padx=10, pady=(18, 12), side="bottom")
 
         main = tk.Frame(root) # The right side shows the input, table and summary
-        main.pack(side="left", fill="both", expand=True, padx=(0, 10), pady=10)
+        main.pack(side="left", fill="both", expand=True, padx=14, pady=12)
 
         self.controls = tk.Frame(main) # This is the input area where contents change per menu items
         self.controls.pack(fill="x", pady=(0, 8))
 
         table_frame = tk.Frame(main) # This hold the table and its scrollbar
         table_frame.pack(fill="both", expand=True)
-        self.table = ttk.Treeview(table_frame, columns=Column_Names, show="headings", height=16)
-        widths = (180, 110, 120, 90, 90, 60) # The pixels width of each column
+        self.table = ttk.Treeview(table_frame, columns=Column_Names, show="headings", height=9)
+        self.table.tag_configure("odd", background=Stripe) # This is the colour for every second row
+        self.table.tag_configure("even", background=White)
+        widths = (180, 135, 145, 105, 100, 70) # The pixels width of each column
         for name, width in zip(Column_Names, widths): # pair each heading with its width
             self.table.heading(name, text=name) # The column heading text
             self.table.column(name, width=width, anchor="w" if name == "Name" else "center")
@@ -219,18 +252,50 @@ class StudentManager:
         self.table.pack(side="left", fill="both", expand=True)
         scrollbar.pack(side="right", fill="y")
 
-        self.summary = tk.Label(main, text="", anchor="w", justify="left", font=("Times New Roman", 12))
+        self.summary = tk.Label(main, text="", anchor="w", justify="left", font=(Font, 11, "bold"), fg=Navy)
         self.summary.pack(fill="x", pady=(8, 0)) # This is the summry or status line under the table 
 
         self.show_all() # This start by showing every student on the list
+
+    # Design: the default look for every widget made after this (colours, fonts, flat buttons)
+    def _apply_theme(self):
+        self.root.configure(bg=Pale_Blue)
+        self.root.option_add("*Font", (Font, 10))
+        for widget in ("Frame", "Label", "Radiobutton"): # The working area uses the soft blue background
+            self.root.option_add(f"*{widget}.Background", Pale_Blue)
+            self.root.option_add("*Label.Foreground", Navy)
+            self.root.option_add("*Radiobutton.ActiveBackground", Pale_Blue)
+            self.root.option_add("*Radiobutton.HighlightThickness", 0)
+            self.root.option_add("*Button.Background", Blue) # Buttons are blue with white text
+            self.root.option_add("*Button.Foreground", White)
+            self.root.option_add("*Button.ActiveBackground", Navy)
+            self.root.option_add("*Button.ActiveForeground", White)
+            self.root.option_add("*Button.Relief", "flat")
+            self.root.option_add("*Button.BorderWidth", 0)
+            self.root.option_add("*Button.Cursor", "hand2") # The hand pointer shows it can be clicked
+            self.root.option_add("*Button.PadX", 12)
+            self.root.option_add("*Button.HighlightThickness", 0) # No outline around the buttons
+            self.root.option_add("*Entry.Relief", "flat") # The typing boxes get a thin blue border instead of a black one
+            self.root.option_add("*Entry.HighlightThickness", 1)
+            self.root.option_add("*Entry.HighlightBackground", "#b8cbe0")
+            self.root.option_add("*Entry.HighlightColor", Blue) # The border turns darker blue while typing in the box
+
+        style = ttk.Style(self.root)
+        style.theme_use("clam") # This theme lets the table headings take a colour
+        style.configure("Treeview", background=White, fieldbackground=White, foreground=Navy, rowheight=26, font=(Font, 10), borderwidth=0)
+        style.configure("Treeview.Heading", background=Blue, foreground=White, font=(Font, 10, "bold"), relief="flat", padding=6)
+        style.map("Treeview.Heading", background=[("active", Navy)])
+        style.map("Treeview", background=[("selected", Light_Blue)], foreground=[("selected", White)])
+        style.configure("TCombobox", fieldbackground=White, padding=3)
+        style.map("TCombobox", fieldbackground=[("readonly", White)], selectbackground=[("readonly", White)], selectforeground=[("readonly", Navy)])
 
     # Helpers for the menu
 
     #This replace the tables rows with students and set the summary line
     def _show(self, students, summary):
         self.table.delete(*self.table.get_children()) # This remove the old rows
-        for student in students:
-            self.table.insert("", "end", values=(student.name, student.code, student.coursework_total(), student.exam, f"{student.percentage():.1f}%", student.grade())) # It add one row per student with the values in the same order as the columns
+        for row, student in enumerate(students):
+            self.table.insert("", "end", values=(student.name, student.code, student.coursework_total(), student.exam, f"{student.percentage():.1f}%", student.grade()), tags=("odd" if row % 2 else "even",)) # It add one row per student with the values in the same order as the columns and stripes every second row
         self.summary.config(text=summary) # This shows the caller's message under the table
 
     # This empties the input area so each menu item starts with a blank space
@@ -402,7 +467,7 @@ class StudentManager:
 def main():
     root = tk.Tk() # This is for the one main window
     root.title("Student Manager")
-    root.geometry("1000x560")
+    root.geometry("1150x720")
 
     try:
         students, warnings = load_students(Student_File) # THis read the data file
@@ -418,7 +483,6 @@ def main():
         shown = "\n".join(warnings[:10]) + ("\n..." if len(warnings) > 10 else "")
         messagebox.showwarning("Some records were skipped", shown + "\n\nSkipped lines are NOT kept if you later add, delete or update a record.")
     root.mainloop() # It wait for user to click
-
 
 # This runs only when this file is executed directly not when imported
 if __name__ == "__main__":
